@@ -671,6 +671,9 @@ class GoliathCognitiveInterpreter {
         maxDelay: this.config.schedulerMaxDelay || 16
       });
     }
+    
+    // Initialize auto-save system if available
+    this._initializeAutoSave().catch(err => console.warn('Auto-save init failed:', err.message));
   }
 
   /**
@@ -792,6 +795,18 @@ class GoliathCognitiveInterpreter {
       if (this.config.performanceOptimized) {
         this._cacheEventResult(perceptionEvent, result);
       }
+      
+      // Track AI assessment for auto-save
+      this._markChanged({
+        type: 'event_interpreted',
+        eventId: result.eventId,
+        suspicionLevel: result.suspicionLevel,
+        entityType: perceptionEvent.entityType,
+        processingTime: result.processingLatency,
+        isAiGenerated: true,
+        source: 'ai',
+        timestamp: Date.now()
+      });
       
       return result;
       
@@ -1099,6 +1114,147 @@ class GoliathCognitiveInterpreter {
   }
 
   /**
+   * Initialize auto-save system
+   */
+  async _initializeAutoSave() {
+    if (this.config.autoSaveEnabled === false) {
+      return;
+    }
+
+    try {
+      // Dynamic import of AutoSaveSystem
+      const autoSaveModule = await import('./auto-save-system.js');
+      const AutoSaveSystem = autoSaveModule.default;
+
+      this.autoSaveSystem = new AutoSaveSystem({
+        autoSaveEnabled: this.config.autoSaveEnabled !== false,
+        saveInterval: this.config.autoSaveInterval || 30000, // 30 seconds
+        saveDirectory: this.config.autoSaveDirectory || './data/auto-saves',
+        maxBackups: this.config.maxAutoSaveBackups || 10,
+        devinTrackingEnabled: this.config.devinTrackingEnabled !== false,
+        ...this.config.autoSaveConfig
+      });
+
+      // Register cognitive systems for auto-save
+      if (this.contextualMemory && this.contextualMemory.initializeAutoSave) {
+        this.contextualMemory.initializeAutoSave(this.autoSaveSystem);
+      }
+
+      if (this.adaptiveLearning && this.adaptiveLearning.initializeAutoSave) {
+        this.adaptiveLearning.initializeAutoSave(this.autoSaveSystem);
+      }
+
+      // Register main AI system for auto-save
+      this.autoSaveSystem.registerComponent('main-ai-system', this);
+
+      console.log('💾 Auto-save system initialized successfully');
+    } catch (error) {
+      console.warn('Failed to initialize auto-save system:', error.message);
+    }
+  }
+
+  /**
+   * Get current state for saving (required by AutoSaveSystem)
+   */
+  async getSaveState() {
+    return {
+      config: {
+        // Save only serializable config properties
+        maxMemoryEvents: this.config.maxMemoryEvents,
+        memoryRetentionHours: this.config.memoryRetentionHours,
+        uncertaintyThreshold: this.config.uncertaintyThreshold,
+        confidenceThreshold: this.config.confidenceThreshold,
+        spatialRadius: this.config.spatialRadius,
+        temporalWindow: this.config.temporalWindow,
+        suspicionThresholds: this.config.suspicionThresholds,
+        // Add other relevant config properties
+      },
+      performanceMetrics: this.performanceMetrics,
+      alertTimestamps: Array.from(this._alertTimestamps.entries()),
+      timestamp: Date.now(),
+      version: '2.0.0'
+    };
+  }
+
+  /**
+   * Restore state from saved data (required by AutoSaveSystem)
+   */
+  async restoreFromSave(savedState) {
+    if (!savedState) return;
+
+    // Restore performance metrics
+    if (savedState.performanceMetrics) {
+      this.performanceMetrics = { ...this.performanceMetrics, ...savedState.performanceMetrics };
+    }
+
+    // Restore alert timestamps
+    if (savedState.alertTimestamps) {
+      this._alertTimestamps = new Map(savedState.alertTimestamps);
+    }
+
+    console.log('📂 Main AI system state restored');
+  }
+
+  /**
+   * Force immediate auto-save
+   */
+  async saveState() {
+    if (this.autoSaveSystem) {
+      await this.autoSaveSystem.forceSave();
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Load latest auto-save
+   */
+  async loadLatestState() {
+    if (this.autoSaveSystem) {
+      const saveData = await this.autoSaveSystem.loadLatestSave();
+      if (saveData) {
+        await this.autoSaveSystem.restoreFromSave(saveData);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Get auto-save status and devin changes summary
+   */
+  getAutoSaveStatus() {
+    if (!this.autoSaveSystem) {
+      return { enabled: false, message: 'Auto-save not available' };
+    }
+
+    return {
+      enabled: true,
+      ...this.autoSaveSystem.getStatus(),
+      devinChangesSummary: this.autoSaveSystem.getDevinChangesSummary()
+    };
+  }
+
+  /**
+   * Export devin changes to file
+   */
+  async exportDevinChanges() {
+    if (this.autoSaveSystem) {
+      return await this.autoSaveSystem.exportDevinChanges();
+    }
+    throw new Error('Auto-save system not available');
+  }
+
+  /**
+   * Mark system as changed (for tracking devin/AI changes)
+   */
+  _markChanged(changeDetails = {}) {
+    if (this.autoSaveSystem) {
+      this.autoSaveSystem.markChanged('main-ai-system', changeDetails);
+    }
+  }
+
+  /**
    * Schedule a task asynchronously if scheduler is enabled
    */
   scheduleAsync(task, priority = 'normal') {
@@ -1222,7 +1378,6 @@ class GoliathCognitiveInterpreter {
         reasons.push('night_unauthorized_entry_min');
       }
     }
-    let shouldNotify = alertLevel !== 'info';
 
     // Apply user preference for known activity handling
     const handling = this.config.knownActivityHandling || 'low';

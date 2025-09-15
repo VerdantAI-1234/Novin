@@ -36,6 +36,10 @@ class ContextualMemorySystem {
       contextualNorms: 0
     };
     
+    // Auto-save integration
+    this.autoSaveSystem = null;
+    this.componentId = 'contextual-memory';
+    
     console.log('🧠 Contextual Memory System initialized');
   }
 
@@ -91,6 +95,15 @@ class ContextualMemorySystem {
       
       // Compress old memories if needed
       await this._compressMemoriesIfNeeded();
+      
+      // Mark as changed for auto-save
+      this._markChanged({
+        type: 'memory_stored',
+        memoryId,
+        entityType: perceptionEvent.entityType,
+        hasFeedback: !!feedback,
+        timestamp: Date.now()
+      });
       
       return memoryId;
       
@@ -457,6 +470,88 @@ class ContextualMemorySystem {
       await this.memoryCompressor.compressOldMemories();
     }
   }
+
+  /**
+   * Initialize auto-save system integration
+   * @param {AutoSaveSystem} autoSaveSystem - Auto-save system instance
+   */
+  initializeAutoSave(autoSaveSystem) {
+    this.autoSaveSystem = autoSaveSystem;
+    autoSaveSystem.registerComponent(this.componentId, this);
+    console.log('💾 Contextual Memory System registered for auto-save');
+  }
+
+  /**
+   * Get current state for saving
+   * Required by AutoSaveSystem
+   */
+  async getSaveState() {
+    return {
+      memoryStats: this.memoryStats,
+      spatialMemoryState: this.spatialMemory.getSaveState ? await this.spatialMemory.getSaveState() : {},
+      temporalMemoryState: this.temporalMemory.getSaveState ? await this.temporalMemory.getSaveState() : {},
+      behavioralMemoryState: this.behavioralMemory.getSaveState ? await this.behavioralMemory.getSaveState() : {},
+      entityMemoryState: this.entityMemory.getSaveState ? await this.entityMemory.getSaveState() : {},
+      contextualNormsState: this.contextualNorms.getSaveState ? await this.contextualNorms.getSaveState() : {},
+      adaptiveLearningState: this.adaptiveLearning.getSaveState ? await this.adaptiveLearning.getSaveState() : {},
+      timestamp: Date.now(),
+      version: '1.0.0'
+    };
+  }
+
+  /**
+   * Restore state from saved data
+   * Required by AutoSaveSystem
+   */
+  async restoreFromSave(savedState) {
+    if (!savedState) return;
+
+    // Restore memory stats
+    if (savedState.memoryStats) {
+      this.memoryStats = { ...this.memoryStats, ...savedState.memoryStats };
+    }
+
+    // Restore component states if they support it
+    const restorePromises = [];
+
+    if (savedState.spatialMemoryState && this.spatialMemory.restoreFromSave) {
+      restorePromises.push(this.spatialMemory.restoreFromSave(savedState.spatialMemoryState));
+    }
+
+    if (savedState.temporalMemoryState && this.temporalMemory.restoreFromSave) {
+      restorePromises.push(this.temporalMemory.restoreFromSave(savedState.temporalMemoryState));
+    }
+
+    if (savedState.behavioralMemoryState && this.behavioralMemory.restoreFromSave) {
+      restorePromises.push(this.behavioralMemory.restoreFromSave(savedState.behavioralMemoryState));
+    }
+
+    if (savedState.entityMemoryState && this.entityMemory.restoreFromSave) {
+      restorePromises.push(this.entityMemory.restoreFromSave(savedState.entityMemoryState));
+    }
+
+    if (savedState.contextualNormsState && this.contextualNorms.restoreFromSave) {
+      restorePromises.push(this.contextualNorms.restoreFromSave(savedState.contextualNormsState));
+    }
+
+    if (savedState.adaptiveLearningState && this.adaptiveLearning.restoreFromSave) {
+      restorePromises.push(this.adaptiveLearning.restoreFromSave(savedState.adaptiveLearningState));
+    }
+
+    await Promise.all(restorePromises);
+    console.log('📂 Contextual Memory System state restored');
+  }
+
+  /**
+   * Mark memory system as changed (triggers auto-save)
+   * @param {Object} changeDetails - Details about the change
+   */
+  _markChanged(changeDetails = {}) {
+    if (this.autoSaveSystem) {
+      this.autoSaveSystem.markChanged(this.componentId, changeDetails);
+    }
+  }
+}
 }
 
 /**
