@@ -1,0 +1,143 @@
+[
+  {
+    "id": "event_001",
+    "label": "benign",
+    "events": [
+      {
+        "entityType": "adult_male",
+        "entityId": "person_001",
+        "location": "main_entrance",
+        "timestamp": 1640995200000,
+        "behaviors": ["walking", "approaching"],
+        "spatialData": { "x": 10, "y": 5 },
+        "detectionConfidence": 0.95
+      }
+    ],
+    "description": "Normal employee entering building during business hours"
+  },
+  {
+    "id": "event_002",
+    "label": "suspicious",
+    "events": [
+      {
+        "entityType": "adult_male",
+        "entityId": "person_002",
+        "location": "rear_entrance",
+        "timestamp": 1641000600000,
+        "behaviors": ["loitering", "looking_around"],
+        "spatialData": { "x": -20, "y": 15 },
+        "detectionConfidence": 0.87
+      },
+      {
+        "entityType": "adult_male",
+        "entityId": "person_002",
+        "location": "rear_entrance",
+        "timestamp": 1641000900000,
+        "behaviors": ["approaching", "testing_door"],
+        "spatialData": { "x": -18, "y": 12 },
+        "detectionConfidence": 0.91
+      }
+    ],
+    "description": "Person loitering and testing rear entrance after hours"
+  },
+  {
+    "id": "event_003",
+    "label": "reconnaissance",
+    "events": [
+      {
+        "entityType": "adult_female",
+        "entityId": "person_003",
+        "location": "parking_lot",
+        "timestamp": 1641004200000,
+        "behaviors": ["observing", "photographing"],
+        "spatialData": { "x": 50, "y": -10 },
+        "detectionConfidence": 0.93
+      },
+      {
+        "entityType": "adult_female",
+        "entityId": "person_003",
+        "location": "side_wall",
+        "timestamp": 1641004500000,
+        "behaviors": ["examining", "measuring"],
+        "spatialData": { "x": 30, "y": 8 },
+        "detectionConfidence": 0.89
+      },
+      {
+        "entityType": "adult_female",
+        "entityId": "person_003",
+        "location": "security_camera",
+        "timestamp": 1641004800000,
+        "behaviors": ["pointing", "documenting"],
+        "spatialData": { "x": 25, "y": 12 },
+        "detectionConfidence": 0.96
+      }
+    ],
+    "description": "Systematic documentation of facility security measures"
+  },
+  {
+    "id": "event_004",
+    "label": "benign",
+    "events": [
+      {
+        "entityType": "delivery_vehicle",
+        "entityId": "truck_001",
+        "location": "loading_dock",
+        "timestamp": 1641008400000,
+        "behaviors": ["parking", "unloading"],
+        "spatialData": { "x": -30, "y": -25 },
+        "detectionConfidence": 0.98
+      }
+    ],
+    "description": "Scheduled delivery during normal business hours"
+  },
+  {
+    "id": "event_005",
+    "label": "curious",
+    "events": [
+      {
+        "entityType": "adult_male",
+        "entityId": "person_005",
+        "location": "front_window",
+        "timestamp": 1641012000000,
+        "behaviors": ["peering", "cupping_hands"],
+        "spatialData": { "x": 5, "y": -5 },
+        "detectionConfidence": 0.85
+      },
+      {
+        "entityType": "adult_male",
+        "entityId": "person_005",
+        "location": "front_door",
+        "timestamp": 1641012300000,
+        "behaviors": ["reading_sign", "checking_hours"],
+        "spatialData": { "x": 8, "y": 0 },
+        "detectionConfidence": 0.92
+      }
+    ],
+    "description": "Potential customer checking if business is open"
+  },
+  {
+    "id": "event_006",
+    "label": "trespassing",
+    "events": [
+      {
+        "entityType": "adult_male",
+        "entityId": "person_006",
+        "location": "fence_perimeter",
+        "timestamp": 1641016800000,
+        "behaviors": ["climbing", "fence_breach"],
+        "spatialData": { "x": -45, "y": 30 },
+        "detectionConfidence": 0.94
+      },
+      {
+        "entityType": "adult_male",
+        "entityId": "person_006",
+        "location": "restricted_area",
+        "timestamp": 1641017100000,
+        "behaviors": ["walking", "avoiding_lights"],
+        "spatialData": { "x": -40, "y": 25 },
+        "detectionConfidence": 0.88
+      }
+    ],
+    "description": "Unauthorized entry into restricted facility area"
+  }
+]
