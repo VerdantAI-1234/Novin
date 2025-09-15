@@ -1,0 +1,69 @@
+{
+  "name": "goliath-cognitive-interpreter",
+  "version": "2.0.0",
+  "description": "Goliath Cognitive Interpreter - Edge-native AI for contextual security reasoning and embodied cognition",
+  "type": "module",
+  "main": "src/mobilenovin-ai.js",
+  "module": "src/mobilenovin-ai.js",
+  "types": "src/mobilenovin-ai.d.ts",
+  "sideEffects": false,
+  "keywords": [
+    "cognitive-ai",
+    "edge-computing",
+    "contextual-reasoning",
+    "embodied-cognition",
+    "security-intelligence",
+    "symbolic-ai",
+    "explainable-ai",
+    "spatial-temporal",
+    "intent-modeling"
+  ],
+  "author": "Cognitive Systems Team",
+  "license": "MIT",
+  "homepage": "https://mobilenovin.ai",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mobilenovin/ai-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mobilenovin/ai-sdk/issues"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "scripts": {
+    "test": "jest --maxWorkers=2",
+    "build": "webpack --mode production --optimize-minimize",
+    "build:optimized": "webpack --mode production --optimize-minimize --env target=edge",
+    "dev": "webpack --mode=development --watch",
+    "lint": "eslint src/ --fix",
+    "docs": "jsdoc -d docs src/",
+    "benchmark": "node benchmark/cognitive-performance-test.js",
+    "size-analysis": "webpack-bundle-analyzer dist/bundle.js",
+    "memory-profile": "node --inspect benchmark/memory-profile.js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-bundle-analyzer": "^4.9.1",
+    "terser-webpack-plugin": "^5.3.9",
+    "eslint": "^8.54.0",
+    "jsdoc": "^4.0.2"
+  },
+  "files": [
+    "src/",
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "config": {
+    "target_size_mb": 50,
+    "target_latency_ms": 5,
+    "memory_limit_mb": 128
+  }
+}
