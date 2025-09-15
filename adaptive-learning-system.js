@@ -38,6 +38,10 @@ class AdaptiveLearningSystem {
       environmental: new EnvironmentalNorms()
     };
     
+    // Auto-save integration
+    this.autoSaveSystem = null;
+    this.componentId = 'adaptive-learning';
+    
     console.log('🧠 Adaptive Learning System initialized');
   }
 
@@ -120,6 +124,16 @@ class AdaptiveLearningSystem {
       
       // Update performance metrics
       this.performanceMetrics.recordLearning(learningResult);
+      
+      // Mark as changed for auto-save
+      this._markChanged({
+        type: 'feedback_processed',
+        learningId,
+        assessmentId,
+        hasSignificantChange: learningResult.adaptationStrength > 0.5,
+        source: contextualData?.source || 'user',
+        timestamp: Date.now()
+      });
       
       return learningResult;
       
@@ -345,6 +359,93 @@ class AdaptiveLearningSystem {
   _generateUpdateId() {
     return `update-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
   }
+
+  /**
+   * Initialize auto-save system integration
+   * @param {AutoSaveSystem} autoSaveSystem - Auto-save system instance
+   */
+  initializeAutoSave(autoSaveSystem) {
+    this.autoSaveSystem = autoSaveSystem;
+    autoSaveSystem.registerComponent(this.componentId, this);
+    console.log('💾 Adaptive Learning System registered for auto-save');
+  }
+
+  /**
+   * Get current state for saving
+   * Required by AutoSaveSystem
+   */
+  async getSaveState() {
+    return {
+      learningState: this.learningState.getState ? this.learningState.getState() : {},
+      adaptationHistory: Array.from(this.adaptationHistory.entries()),
+      performanceMetrics: this.performanceMetrics.getState ? this.performanceMetrics.getState() : {},
+      learningRate: this.learningRate,
+      adaptationThreshold: this.adaptationThreshold,
+      forgettingFactor: this.forgettingFactor,
+      normCategories: Object.fromEntries(
+        Object.entries(this.normCategories).map(([key, norm]) => [
+          key, 
+          norm.getState ? norm.getState() : {}
+        ])
+      ),
+      timestamp: Date.now(),
+      version: '1.0.0'
+    };
+  }
+
+  /**
+   * Restore state from saved data
+   * Required by AutoSaveSystem
+   */
+  async restoreFromSave(savedState) {
+    if (!savedState) return;
+
+    // Restore learning parameters
+    if (savedState.learningRate !== undefined) this.learningRate = savedState.learningRate;
+    if (savedState.adaptationThreshold !== undefined) this.adaptationThreshold = savedState.adaptationThreshold;
+    if (savedState.forgettingFactor !== undefined) this.forgettingFactor = savedState.forgettingFactor;
+
+    // Restore adaptation history
+    if (savedState.adaptationHistory) {
+      this.adaptationHistory = new Map(savedState.adaptationHistory);
+    }
+
+    // Restore component states if they support it
+    const restorePromises = [];
+
+    if (savedState.learningState && this.learningState.restoreState) {
+      restorePromises.push(this.learningState.restoreState(savedState.learningState));
+    }
+
+    if (savedState.performanceMetrics && this.performanceMetrics.restoreState) {
+      restorePromises.push(this.performanceMetrics.restoreState(savedState.performanceMetrics));
+    }
+
+    if (savedState.normCategories) {
+      for (const [key, normState] of Object.entries(savedState.normCategories)) {
+        if (this.normCategories[key] && this.normCategories[key].restoreState) {
+          restorePromises.push(this.normCategories[key].restoreState(normState));
+        }
+      }
+    }
+
+    await Promise.all(restorePromises);
+    console.log('📂 Adaptive Learning System state restored');
+  }
+
+  /**
+   * Mark learning system as changed (triggers auto-save)
+   * @param {Object} changeDetails - Details about the change
+   */
+  _markChanged(changeDetails = {}) {
+    if (this.autoSaveSystem) {
+      this.autoSaveSystem.markChanged(this.componentId, {
+        ...changeDetails,
+        isDevinChange: changeDetails.source === 'devin' || changeDetails.isAiGenerated
+      });
+    }
+  }
+}
 }
 
 /**
