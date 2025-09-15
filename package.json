@@ -2,7 +2,6 @@
   "name": "goliath-cognitive-interpreter",
   "version": "2.0.0",
   "description": "Goliath Cognitive Interpreter - Edge-native AI for contextual security reasoning and embodied cognition",
-  "type": "module",
   "main": "src/mobilenovin-ai.js",
   "module": "src/mobilenovin-ai.js",
   "types": "src/mobilenovin-ai.d.ts",
@@ -33,14 +32,20 @@
   },
   "scripts": {
     "test": "jest --maxWorkers=2",
-    "build": "webpack --mode production --optimize-minimize",
-    "build:optimized": "webpack --mode production --optimize-minimize --env target=edge",
+    "test:watch": "jest --watch --maxWorkers=2",
+    "test:coverage": "jest --coverage --maxWorkers=2",
+    "build": "webpack --mode production",
+    "build:optimized": "webpack --mode production --env target=edge",
+    "build:dev": "webpack --mode development",
     "dev": "webpack --mode=development --watch",
-    "lint": "eslint src/ --fix",
+    "lint": "eslint src/ tests/ --fix",
+    "lint:check": "eslint src/ tests/",
     "docs": "jsdoc -d docs src/",
     "benchmark": "node benchmark/cognitive-performance-test.js",
     "size-analysis": "webpack-bundle-analyzer dist/bundle.js",
-    "memory-profile": "node --inspect benchmark/memory-profile.js"
+    "memory-profile": "node --inspect benchmark/memory-profile.js",
+    "prepack": "npm run lint && npm run test && npm run build",
+    "validate": "npm run lint:check && npm run test && npm run build"
   },
   "dependencies": {},
   "devDependencies": {
