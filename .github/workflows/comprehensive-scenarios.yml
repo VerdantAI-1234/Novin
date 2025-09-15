@@ -1,0 +1,201 @@
+name: Comprehensive Scenarios
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      verbose:
+        description: 'Enable verbose logging'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  scenario-tests:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x]
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run existing tests
+      run: npm test
+      continue-on-error: true
+      
+    - name: Run behavior evaluation scenario
+      id: behavior-eval
+      run: |
+        echo "Running behavior evaluation..."
+        if [ "${{ github.event.inputs.verbose }}" = "true" ]; then
+          node scripts/evaluate_behavior.cjs --verbose
+        else
+          node scripts/evaluate_behavior.cjs
+        fi
+        echo "behavior-eval-exit-code=$?" >> $GITHUB_OUTPUT
+      
+    - name: Run autosave roundtrip test
+      id: autosave-test
+      run: |
+        echo "Running autosave roundtrip test..."
+        if [ "${{ github.event.inputs.verbose }}" = "true" ]; then
+          node scripts/test_autosave_roundtrip.cjs --verbose
+        else
+          node scripts/test_autosave_roundtrip.cjs
+        fi
+        echo "autosave-test-exit-code=$?" >> $GITHUB_OUTPUT
+    
+    - name: Check scenario results
+      run: |
+        echo "Behavior evaluation exit code: ${{ steps.behavior-eval.outputs.behavior-eval-exit-code }}"
+        echo "Autosave test exit code: ${{ steps.autosave-test.outputs.autosave-test-exit-code }}"
+        
+        # Fail the workflow if any scenario failed
+        if [ "${{ steps.behavior-eval.outputs.behavior-eval-exit-code }}" != "0" ]; then
+          echo "❌ Behavior evaluation scenario failed"
+          exit 1
+        fi
+        
+        if [ "${{ steps.autosave-test.outputs.autosave-test-exit-code }}" != "0" ]; then
+          echo "❌ Autosave roundtrip test failed"
+          exit 1
+        fi
+        
+        echo "✅ All scenario tests passed"
+    
+    - name: Upload evaluation results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: evaluation-results-${{ matrix.node-version }}
+        path: |
+          evaluation_results.json
+          autosave_test_results.json
+        retention-days: 30
+        if-no-files-found: warn
+    
+    - name: Upload scenario logs
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: scenario-logs-${{ matrix.node-version }}
+        path: |
+          *.log
+          test-autosave/
+        retention-days: 7
+        if-no-files-found: ignore
+    
+    - name: Create scenario summary
+      if: always()
+      run: |
+        echo "## 📊 Scenario Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Scenario | Status | Details |" >> $GITHUB_STEP_SUMMARY
+        echo "|----------|--------|---------|" >> $GITHUB_STEP_SUMMARY
+        
+        # Behavior evaluation summary
+        if [ "${{ steps.behavior-eval.outputs.behavior-eval-exit-code }}" = "0" ]; then
+          echo "| Behavior Evaluation | ✅ Pass | Event sequence classification working correctly |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| Behavior Evaluation | ❌ Fail | Event sequence classification issues detected |" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # Autosave test summary
+        if [ "${{ steps.autosave-test.outputs.autosave-test-exit-code }}" = "0" ]; then
+          echo "| AutoSave Roundtrip | ✅ Pass | Save/restore cycle and integrity checks working |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| AutoSave Roundtrip | ❌ Fail | AutoSave system issues detected |" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📋 Artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "- Evaluation results: \`evaluation_results.json\`" >> $GITHUB_STEP_SUMMARY
+        echo "- AutoSave test results: \`autosave_test_results.json\`" >> $GITHUB_STEP_SUMMARY
+        echo "- Logs and debug files available in artifacts" >> $GITHUB_STEP_SUMMARY
+        
+        # Add detailed results if available
+        if [ -f "evaluation_results.json" ]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎯 Behavior Evaluation Details" >> $GITHUB_STEP_SUMMARY
+          
+          # Extract key metrics using node
+          node -e "
+            try {
+              const fs = require('fs');
+              const results = JSON.parse(fs.readFileSync('evaluation_results.json', 'utf8'));
+              console.log(\`- **Accuracy**: \${(results.summary.accuracy * 100).toFixed(2)}%\`);
+              console.log(\`- **Macro F1**: \${(results.summary.macro_f1 * 100).toFixed(2)}%\`);
+              console.log(\`- **Samples**: \${results.total_samples}\`);
+              console.log(\`- **Errors**: \${results.summary.errors}\`);
+            } catch (e) {
+              console.log('- Results parsing failed');
+            }
+          " >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -f "autosave_test_results.json" ]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 💾 AutoSave Test Details" >> $GITHUB_STEP_SUMMARY
+          
+          # Extract key metrics using node
+          node -e "
+            try {
+              const fs = require('fs');
+              const results = JSON.parse(fs.readFileSync('autosave_test_results.json', 'utf8'));
+              console.log(\`- **Phases passed**: \${results.summary.passed}\`);
+              console.log(\`- **Phases failed**: \${results.summary.failed}\`);
+              if (results.summary.errors.length > 0) {
+                console.log(\`- **Errors**: \${results.summary.errors.length}\`);
+              }
+            } catch (e) {
+              console.log('- Results parsing failed');
+            }
+          " >> $GITHUB_STEP_SUMMARY
+        fi
+
+  validate-scenarios:
+    runs-on: ubuntu-latest
+    needs: scenario-tests
+    if: always()
+    
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        pattern: evaluation-results-*
+        merge-multiple: true
+    
+    - name: Validate scenario outputs
+      run: |
+        echo "🔍 Validating scenario outputs..."
+        
+        # Check if evaluation results exist and are valid JSON
+        if [ -f "evaluation_results.json" ]; then
+          echo "✓ Evaluation results found"
+          node -e "JSON.parse(require('fs').readFileSync('evaluation_results.json', 'utf8'))" && echo "✓ Valid JSON" || (echo "❌ Invalid JSON" && exit 1)
+        else
+          echo "⚠️ Evaluation results not found"
+        fi
+        
+        # Check if autosave results exist and are valid JSON
+        if [ -f "autosave_test_results.json" ]; then
+          echo "✓ AutoSave results found"
+          node -e "JSON.parse(require('fs').readFileSync('autosave_test_results.json', 'utf8'))" && echo "✓ Valid JSON" || (echo "❌ Invalid JSON" && exit 1)
+        else
+          echo "⚠️ AutoSave results not found"
+        fi
+        
+        echo "✅ Scenario output validation completed"

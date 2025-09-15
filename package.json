@@ -40,7 +40,9 @@
     "docs": "jsdoc -d docs src/",
     "benchmark": "node benchmark/cognitive-performance-test.js",
     "size-analysis": "webpack-bundle-analyzer dist/bundle.js",
-    "memory-profile": "node --inspect benchmark/memory-profile.js"
+    "memory-profile": "node --inspect benchmark/memory-profile.js",
+    "scenario:evaluate": "node scripts/evaluate_behavior.cjs",
+    "scenario:autosave": "node scripts/test_autosave_roundtrip.cjs"
   },
   "dependencies": {},
   "devDependencies": {
