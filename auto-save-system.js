@@ -10,6 +10,12 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
+import { createHash } from 'crypto';
+import { gzip, gunzip } from 'zlib';
+import { promisify } from 'util';
+
+const gzipAsync = promisify(gzip);
+const gunzipAsync = promisify(gunzip);
 
 class AutoSaveSystem {
   constructor(config = {}) {
@@ -206,37 +212,45 @@ class AutoSaveSystem {
    * Write save file with optional compression
    */
   async _writeSaveFile(filePath, data) {
-    const jsonData = JSON.stringify(data, null, this.config.compressionEnabled ? 0 : 2);
-    
-    if (this.config.compressionEnabled) {
-      // Simple compression - in production, consider using zlib
-      const compressed = this._simpleCompress(jsonData);
-      await fs.writeFile(filePath + '.compressed', compressed);
-    } else {
-      await fs.writeFile(filePath, jsonData);
+    try {
+      const jsonData = JSON.stringify(data, null, this.config.compressionEnabled ? 0 : 2);
+      
+      if (this.config.compressionEnabled) {
+        const compressed = await gzipAsync(Buffer.from(jsonData, 'utf8'));
+        await fs.writeFile(filePath + '.gz', compressed);
+      } else {
+        await fs.writeFile(filePath, jsonData);
+      }
+    } catch (error) {
+      console.error('Failed to write save file:', error);
+      throw error;
     }
   }
 
   /**
-   * Simple compression placeholder
+   * Production-grade compression using gzip
    */
-  _simpleCompress(data) {
-    // Placeholder for compression - in production use actual compression library
-    return Buffer.from(data, 'utf8').toString('base64');
+  async _compressData(data) {
+    try {
+      return await gzipAsync(Buffer.from(data, 'utf8'));
+    } catch (error) {
+      console.warn('Compression failed, using uncompressed data:', error);
+      return Buffer.from(data, 'utf8');
+    }
   }
 
   /**
-   * Calculate simple checksum for data integrity
+   * Calculate SHA-256 checksum for data integrity
    */
   _calculateChecksum(data) {
-    const str = JSON.stringify(data);
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32-bit integer
+    try {
+      // Create canonical JSON to ensure consistent hashing
+      const canonicalJson = JSON.stringify(data, Object.keys(data).sort());
+      return createHash('sha256').update(canonicalJson, 'utf8').digest('hex');
+    } catch (error) {
+      console.warn('Checksum calculation failed:', error);
+      return 'checksum-error-' + Date.now();
     }
-    return Math.abs(hash).toString(36);
   }
 
   /**

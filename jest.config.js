@@ -5,6 +5,7 @@
 
 export default {
   // Use ES modules
+  extensionsToTreatAsEsm: ['.js'],
   moduleNameMapper: {
     '^(\.{1,2}/.*)\.js$': '$1'
   },
@@ -20,21 +21,11 @@ export default {
   ],
   
   // Coverage settings
-  collectCoverage: true,
-  coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html'],
-  collectCoverageFrom: [
-    'src/**/*.js',
-    '!src/**/*.test.js',
-    '!src/**/*.spec.js'
-  ],
+  collectCoverage: false, // Disable for now to avoid complexity
   
   // Performance settings for mobile/edge deployment testing
   maxWorkers: 2,
   testTimeout: 10000,
-  
-  // Setup files
-  setupFilesAfterEnv: [],
   
   // Module resolution
   moduleFileExtensions: ['js', 'json'],

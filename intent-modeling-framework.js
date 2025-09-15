@@ -342,10 +342,13 @@ class IntentModelingFramework {
   }
 
   _calculateReliability(factors) {
-    const variance = Object.values(factors).reduce((sum, value, _, array) => {
+    const values = Object.values(factors);
+    if (values.length === 0) return 0.5; // Neutral score for empty factors
+    
+    const variance = values.reduce((sum, value, _, array) => {
       const mean = array.reduce((a, b) => a + b) / array.length;
       return sum + Math.pow(value - mean, 2);
-    }, 0) / Object.values(factors).length;
+    }, 0) / values.length;
     
     return Math.max(0, 1 - variance); // Lower variance = higher reliability
   }
@@ -1181,6 +1184,8 @@ class TemporalIntentTracker {
     if (timeIntervals.length < 2) return 1;
     
     const mean = timeIntervals.reduce((sum, interval) => sum + interval, 0) / timeIntervals.length;
+    if (mean === 0) return 0; // Prevent division by zero
+    
     const variance = timeIntervals.reduce((sum, interval) => sum + Math.pow(interval - mean, 2), 0) / timeIntervals.length;
     const stdDev = Math.sqrt(variance);
     

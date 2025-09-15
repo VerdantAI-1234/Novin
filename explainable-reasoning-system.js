@@ -973,7 +973,8 @@ class ConfidenceExplainer {
     
     // Analyze step confidences
     const stepConfidences = reasoningChain.logicalSteps.map(step => step.confidence);
-    factors.averageStepConfidence = stepConfidences.reduce((sum, conf) => sum + conf, 0) / stepConfidences.length;
+    factors.averageStepConfidence = stepConfidences.length > 0 ? 
+      stepConfidences.reduce((sum, conf) => sum + conf, 0) / stepConfidences.length : 0.5;
     
     // Evidence quality
     const evidenceCount = reasoningChain.logicalSteps.reduce((sum, step) => sum + step.evidence.length, 0);
@@ -1058,6 +1059,8 @@ class ConfidenceExplainer {
   _assessLogicalConsistency(reasoningChain) {
     // Simple consistency check based on confidence variance
     const confidences = reasoningChain.logicalSteps.map(step => step.confidence);
+    if (confidences.length === 0) return 0.5; // Neutral score for empty steps
+    
     const avgConfidence = confidences.reduce((sum, conf) => sum + conf, 0) / confidences.length;
     const variance = confidences.reduce((sum, conf) => sum + Math.pow(conf - avgConfidence, 2), 0) / confidences.length;
     
