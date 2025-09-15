@@ -57,3 +57,11 @@ pids/
 *.backup
 *.bak
 .devin-changes/
+
+# Test directories and files
+demo-saves/
+test-auto-saves/
+test-integration-saves/
+manual-test.js
+integration-test.js
+config-demo.js

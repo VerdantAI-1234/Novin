@@ -121,14 +121,24 @@ class AutoSaveSystem {
     if (!this.config.devinTrackingEnabled) return;
     
     const changeId = `${componentId}-${Date.now()}`;
-    this.devinChanges.set(changeId, {
+    const change = {
       componentId,
       timestamp: Date.now(),
       details: changeDetails,
-      saved: false
-    });
+      saved: false,
+      telemetry: {
+        changeSize: JSON.stringify(changeDetails).length,
+        changeType: changeDetails.type || 'unknown',
+        confidenceLevel: changeDetails.confidence || 'unknown'
+      }
+    };
     
-    console.log(`🤖 Tracked Devin change: ${changeId}`);
+    this.devinChanges.set(changeId, change);
+    
+    console.log(`🤖 Tracked Devin change: ${changeId} (${change.telemetry.changeType}, ${(change.telemetry.changeSize / 1024).toFixed(2)}KB)`);
+    
+    // Add validation logging
+    this._validateDevinChange(change);
   }
 
   /**
@@ -171,10 +181,23 @@ class AutoSaveSystem {
 
       // Include unsaved devin changes
       saveData.devinChanges = this._getUnsavedDevinChanges();
+      
+      // Add telemetry data
+      saveData.telemetry = {
+        saveId,
+        componentCount: Object.keys(saveData.components).length,
+        devinChangesCount: saveData.devinChanges.length,
+        saveSize: JSON.stringify(saveData).length,
+        compressionEnabled: this.config.compressionEnabled,
+        saveTime: Date.now()
+      };
 
       // Write save file
       const saveFile = path.join(this.config.saveDirectory, `${saveId}.json`);
       await this._writeSaveFile(saveFile, saveData);
+
+      // Log telemetry
+      console.log(`💾 Auto-save completed: ${saveData.telemetry.componentCount} components, ${saveData.telemetry.devinChangesCount} Devin changes, ${(saveData.telemetry.saveSize / 1024).toFixed(2)}KB`);
 
       // Update state
       this.lastSaveTime = Date.now();
@@ -251,6 +274,33 @@ class AutoSaveSystem {
       console.warn('Checksum calculation failed:', error);
       return 'checksum-error-' + Date.now();
     }
+  }
+
+  /**
+   * Validate Devin changes for integrity and completeness
+   */
+  _validateDevinChange(change) {
+    const issues = [];
+    
+    // Check required fields
+    if (!change.componentId) issues.push('Missing componentId');
+    if (!change.details) issues.push('Missing details');
+    if (!change.timestamp) issues.push('Missing timestamp');
+    
+    // Check data integrity
+    if (change.details) {
+      if (typeof change.details !== 'object') issues.push('Details must be an object');
+      if (change.telemetry?.changeSize > 1024 * 1024) issues.push('Change size exceeds 1MB limit');
+    }
+    
+    // Log validation results
+    if (issues.length > 0) {
+      console.warn(`⚠️  Devin change validation issues: ${issues.join(', ')}`);
+    } else {
+      console.log(`✅ Devin change validated successfully`);
+    }
+    
+    return issues.length === 0;
   }
 
   /**
