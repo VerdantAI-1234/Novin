@@ -53,9 +53,9 @@ class MockSymbolicReasoningEngine {
       reasoningCertainty: 0.8
     };
   }
-  explainDecision((_eventId) {
+  explainDecision(_eventId) {
     return {
-      (_eventId,
+      eventId: _eventId,
       reasoning: 'Mock explanation: Decision based on temporal and behavioral analysis',
       factors: [
         { factor: 'temporal_context', weight: 0.4, description: 'Time of day analysis' },
@@ -71,7 +71,7 @@ class MockIntentModelingEngine {
   constructor(config) {
     this.config = config;
   }
-  async analyzeIntent((_event) {
+  async analyzeIntent(_event) {
     return {
       primaryIntent: 'access_attempt',
       confidence: 0.75,
@@ -79,7 +79,7 @@ class MockIntentModelingEngine {
       behavioralPatterns: ['approach', 'hesitation']
     };
   }
-  async assessIntent(event, (_spatialContext) {
+  async assessIntent(event, _spatialContext) {
     const timeOfDay = event.metadata?.timeOfDay || '12:00';
     const isUnusualTime = timeOfDay < '06:00' || timeOfDay > '22:00';
     const hasAuthorization = event.metadata?.hasKey || event.metadata?.keycard || false;
@@ -111,13 +111,13 @@ class MockSpatialTemporalAwareness {
   constructor(config) {
     this.config = config;
   }
-  processEvent((_event) {
+  processEvent(_event) {
     return {
       spatialContext: { zone: event.location?.zone || 'unknown', proximity: 'close' },
       temporalContext: { timeCategory: 'unusual', normalcy: 0.3 }
     };
   }
-  updatePresence(entityId, location) {
+  updatePresence(_entityId, _location) {
     return { updated: true, spatialContext: { zone: location?.zone || 'unknown' } };
   }
   getAwarenessState() {
@@ -312,7 +312,7 @@ class AsyncScheduler {
 
     this.isProcessing = true;
 
-    const processBatch = ((_deadline) => {
+    const processBatch = (deadline => {
       let processed = 0;
 
       while (this.taskQueue.length > 0 && processed < this.batchSize) {
@@ -348,7 +348,7 @@ class AsyncScheduler {
 
   _scheduleNextBatch() {
     if (this.useIdleCallback) {
-      requestIdleCallback(((_deadline) => {
+      requestIdleCallback((deadline => {
         this._processQueue();
       }, { timeout: this.maxDelay });
     } else {
@@ -832,8 +832,8 @@ class GoliathCognitiveInterpreter {
     const assessments = [];
 
     for (const event of sortedEvents) {
-      const assessment = await this.interpretEvent((_event);
-      assessments.push((_assessment);
+      const assessment = await this.interpretEvent(event;
+      assessments.push(assessment;
 
       // Update sequence context for next event
       this.contextualMemory.updateSequenceContext(assessments);
@@ -852,8 +852,8 @@ class GoliathCognitiveInterpreter {
   /**
    * Query the cognitive state for explanations
    */
-  explainReasoning((_eventId) {
-    return this.reasoningEngine.explainDecision((_eventId);
+  explainReasoning(eventId {
+    return this.reasoningEngine.explainDecision(eventId;
   }
 
   /**
@@ -947,7 +947,7 @@ class GoliathCognitiveInterpreter {
     );
   }
 
-  _validatePerceptionEvent((_event) {
+  _validatePerceptionEvent(event {
     const required = ['entityType', 'entityId', 'location', 'timestamp', 'behaviors'];
     for (const field of required) {
       if (!event[field]) {
@@ -964,7 +964,7 @@ class GoliathCognitiveInterpreter {
     }
   }
 
-  _calculateCognitiveConfidence((_assessment) {
+  _calculateCognitiveConfidence(assessment {
     // Combine multiple confidence factors
     const factors = [
       assessment.intentConfidence || 0.5,
@@ -1000,12 +1000,12 @@ class GoliathCognitiveInterpreter {
   /**
    * Performance optimization methods for edge deployment
    */
-  _checkEventCache((_event) {
+  _checkEventCache(event {
     if (!this.eventCache) {
       this.eventCache = new Map();
     }
 
-    const cacheKey = this._generateCacheKey((_event);
+    const cacheKey = this._generateCacheKey(event;
     const cached = this.eventCache.get(cacheKey);
 
     if (cached && (Date.now() - cached.timestamp) < 30000) { // 30 second cache
@@ -1021,7 +1021,7 @@ class GoliathCognitiveInterpreter {
       this.eventCache = new Map();
     }
 
-    const cacheKey = this._generateCacheKey((_event);
+    const cacheKey = this._generateCacheKey(event;
     this.eventCache.set(cacheKey, {
       result: { ...result },
       timestamp: Date.now()
@@ -1034,7 +1034,7 @@ class GoliathCognitiveInterpreter {
     }
   }
 
-  _generateCacheKey((_event) {
+  _generateCacheKey(event {
     return hashKey(event.entityType, event.location, event.behaviors.join(','), Math.floor(event.timestamp / 60000)); // 1-minute granularity
   }
 
@@ -1089,9 +1089,9 @@ class GoliathCognitiveInterpreter {
   /**
    * Release pooled objects (call when assessment is no longer needed)
    */
-  releaseAssessment((_assessment) {
+  releaseAssessment(assessment {
     if (this.config.objectPooling && this.assessmentPool && (_assessment) {
-      this.assessmentPool.release((_assessment);
+      this.assessmentPool.release(assessment;
     }
   }
 
@@ -1266,7 +1266,7 @@ class GoliathCognitiveInterpreter {
     }
 
     // Confidence gating (lightweight)
-    const cognitiveConfidence = this._calculateCognitiveConfidence((_assessment);
+    const cognitiveConfidence = this._calculateCognitiveConfidence(assessment;
     if (cognitiveConfidence < (this.config.confidenceThreshold || 0.7) && alertLevel !== 'critical') {
       if (alertLevel === 'elevated') {
         alertLevel = 'standard'; reasons.push('low_confidence_downgrade');
@@ -1398,7 +1398,7 @@ class ContextualMemorySystem {
   async retrieveRelevantContext(location, timestamp, (_entityType) {
     const spatialContext = this._getSpatialContext(location);
     const temporalContext = this._getTemporalContext(timestamp);
-    const entityContext = this._getEntityContext((_entityType);
+    const entityContext = this._getEntityContext(entityType;
     const normalPatterns = this._getNormalPatterns(location, timestamp);
 
     return {
@@ -1421,7 +1421,7 @@ class ContextualMemorySystem {
     if (!this.spatialBuffers.has(location)) {
       this.spatialBuffers.set(location, new RingBuffer(100)); // 100 events per location
     }
-    this.spatialBuffers.get(location).push((_eventId);
+    this.spatialBuffers.get(location).push(eventId;
     this.spatialMemory.set(location, this.spatialBuffers.get(location).getRecent(50));
 
     // Temporal indexing using ring buffers
@@ -1429,7 +1429,7 @@ class ContextualMemorySystem {
     if (!this.temporalBuffers.has(timeWindow)) {
       this.temporalBuffers.set(timeWindow, new RingBuffer(50)); // 50 events per time window
     }
-    this.temporalBuffers.get(timeWindow).push((_eventId);
+    this.temporalBuffers.get(timeWindow).push(eventId;
     this.temporalMemory.set(timeWindow, this.temporalBuffers.get(timeWindow).getRecent(25));
 
     // Entity behavioral history using ring buffers
@@ -1476,7 +1476,7 @@ class ContextualMemorySystem {
   getInsights(location, timeRange) {
     const events = this.spatialMemory.get(location) || [];
     const recentEvents = events.filter((_eventId => {
-      const event = this.eventMemory.get((_eventId);
+      const event = this.eventMemory.get(eventId;
       return event && (Date.now() - event.perceptionEvent.timestamp) <= timeRange;
     });
 
@@ -1491,7 +1491,7 @@ class ContextualMemorySystem {
   // Private methods for contextual memory
   _getSpatialContext(location) {
     const nearbyEvents = this.spatialMemory.get(location) || [];
-    return nearbyEvents.slice(-10).map((_eventId => this.eventMemory.get((_eventId)).filter(Boolean);
+    return nearbyEvents.slice(-10).map((_eventId => this.eventMemory.get(eventId).filter(Boolean);
   }
 
   _getTemporalContext(timestamp) {
@@ -1529,7 +1529,7 @@ class ContextualMemorySystem {
     return (spatialRelevance + temporalRelevance) / 2;
   }
 
-  _generateEventId((_event) {
+  _generateEventId(event {
     return `evt-${event.timestamp}-${event.entityId}-${Math.random().toString(36).substr(2, 6)}`;
   }
 
@@ -1537,7 +1537,7 @@ class ContextualMemorySystem {
     return Math.floor(timestamp / this.config.temporalWindow) * this.config.temporalWindow;
   }
 
-  _updateNormalPatterns((_event) {
+  _updateNormalPatterns(event {
     const hour = new Date(event.timestamp).getHours();
     const dayOfWeek = new Date(event.timestamp).getDay();
     const patternKey = hashKey(event.location, hour, dayOfWeek);
@@ -1568,7 +1568,7 @@ class ContextualMemorySystem {
     // Remove old events
     for (const [(_eventId, data] of this.eventMemory) {
       if (data.perceptionEvent.timestamp < cutoffTime) {
-        this.eventMemory.delete((_eventId);
+        this.eventMemory.delete(eventId;
       }
     }
 
@@ -1576,25 +1576,25 @@ class ContextualMemorySystem {
     // Implementation for index cleanup
   }
 
-  _calculateAverageSuspicion((_eventIds) {
+  _calculateAverageSuspicion(eventIds {
     if ((_eventIds.length === 0) {
       return 0;
     }
 
     const suspicions = (_eventIds.map((_eventId => {
-      const event = this.eventMemory.get((_eventId);
+      const event = this.eventMemory.get(eventId;
       return event ? event.cognitiveAssessment.suspicionLevel : 0;
     });
 
     return suspicions.reduce((sum, s) => sum + s, 0) / suspicions.length;
   }
 
-  _getCommonBehaviors((_eventIds) {
+  _getCommonBehaviors(eventIds {
     const behaviorCounts = new Map();
 
     (_eventIds.forEach((_eventId => {
-      const event = this.eventMemory.get((_eventId);
-      if ((_event) {
+      const event = this.eventMemory.get(eventId;
+      if (event {
         event.perceptionEvent.behaviors.forEach(behavior => {
           behaviorCounts.set(behavior, (behaviorCounts.get(behavior) || 0) + 1);
         });
