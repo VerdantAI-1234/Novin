@@ -552,7 +552,6 @@ class ContextualMemorySystem {
     }
   }
 }
-}
 
 /**
  * Spatial Memory Store

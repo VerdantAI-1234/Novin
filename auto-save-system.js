@@ -10,6 +10,12 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
+import { createHash } from 'crypto';
+import { gzip, gunzip } from 'zlib';
+import { promisify } from 'util';
+
+const gzipAsync = promisify(gzip);
+const gunzipAsync = promisify(gunzip);
 
 class AutoSaveSystem {
   constructor(config = {}) {
@@ -115,14 +121,24 @@ class AutoSaveSystem {
     if (!this.config.devinTrackingEnabled) return;
     
     const changeId = `${componentId}-${Date.now()}`;
-    this.devinChanges.set(changeId, {
+    const change = {
       componentId,
       timestamp: Date.now(),
       details: changeDetails,
-      saved: false
-    });
+      saved: false,
+      telemetry: {
+        changeSize: JSON.stringify(changeDetails).length,
+        changeType: changeDetails.type || 'unknown',
+        confidenceLevel: changeDetails.confidence || 'unknown'
+      }
+    };
     
-    console.log(`🤖 Tracked Devin change: ${changeId}`);
+    this.devinChanges.set(changeId, change);
+    
+    console.log(`🤖 Tracked Devin change: ${changeId} (${change.telemetry.changeType}, ${(change.telemetry.changeSize / 1024).toFixed(2)}KB)`);
+    
+    // Add validation logging
+    this._validateDevinChange(change);
   }
 
   /**
@@ -165,10 +181,23 @@ class AutoSaveSystem {
 
       // Include unsaved devin changes
       saveData.devinChanges = this._getUnsavedDevinChanges();
+      
+      // Add telemetry data
+      saveData.telemetry = {
+        saveId,
+        componentCount: Object.keys(saveData.components).length,
+        devinChangesCount: saveData.devinChanges.length,
+        saveSize: JSON.stringify(saveData).length,
+        compressionEnabled: this.config.compressionEnabled,
+        saveTime: Date.now()
+      };
 
       // Write save file
       const saveFile = path.join(this.config.saveDirectory, `${saveId}.json`);
       await this._writeSaveFile(saveFile, saveData);
+
+      // Log telemetry
+      console.log(`💾 Auto-save completed: ${saveData.telemetry.componentCount} components, ${saveData.telemetry.devinChangesCount} Devin changes, ${(saveData.telemetry.saveSize / 1024).toFixed(2)}KB`);
 
       // Update state
       this.lastSaveTime = Date.now();
@@ -206,37 +235,72 @@ class AutoSaveSystem {
    * Write save file with optional compression
    */
   async _writeSaveFile(filePath, data) {
-    const jsonData = JSON.stringify(data, null, this.config.compressionEnabled ? 0 : 2);
-    
-    if (this.config.compressionEnabled) {
-      // Simple compression - in production, consider using zlib
-      const compressed = this._simpleCompress(jsonData);
-      await fs.writeFile(filePath + '.compressed', compressed);
-    } else {
-      await fs.writeFile(filePath, jsonData);
+    try {
+      const jsonData = JSON.stringify(data, null, this.config.compressionEnabled ? 0 : 2);
+      
+      if (this.config.compressionEnabled) {
+        const compressed = await gzipAsync(Buffer.from(jsonData, 'utf8'));
+        await fs.writeFile(filePath + '.gz', compressed);
+      } else {
+        await fs.writeFile(filePath, jsonData);
+      }
+    } catch (error) {
+      console.error('Failed to write save file:', error);
+      throw error;
     }
   }
 
   /**
-   * Simple compression placeholder
+   * Production-grade compression using gzip
    */
-  _simpleCompress(data) {
-    // Placeholder for compression - in production use actual compression library
-    return Buffer.from(data, 'utf8').toString('base64');
+  async _compressData(data) {
+    try {
+      return await gzipAsync(Buffer.from(data, 'utf8'));
+    } catch (error) {
+      console.warn('Compression failed, using uncompressed data:', error);
+      return Buffer.from(data, 'utf8');
+    }
   }
 
   /**
-   * Calculate simple checksum for data integrity
+   * Calculate SHA-256 checksum for data integrity
    */
   _calculateChecksum(data) {
-    const str = JSON.stringify(data);
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32-bit integer
+    try {
+      // Create canonical JSON to ensure consistent hashing
+      const canonicalJson = JSON.stringify(data, Object.keys(data).sort());
+      return createHash('sha256').update(canonicalJson, 'utf8').digest('hex');
+    } catch (error) {
+      console.warn('Checksum calculation failed:', error);
+      return 'checksum-error-' + Date.now();
     }
-    return Math.abs(hash).toString(36);
+  }
+
+  /**
+   * Validate Devin changes for integrity and completeness
+   */
+  _validateDevinChange(change) {
+    const issues = [];
+    
+    // Check required fields
+    if (!change.componentId) issues.push('Missing componentId');
+    if (!change.details) issues.push('Missing details');
+    if (!change.timestamp) issues.push('Missing timestamp');
+    
+    // Check data integrity
+    if (change.details) {
+      if (typeof change.details !== 'object') issues.push('Details must be an object');
+      if (change.telemetry?.changeSize > 1024 * 1024) issues.push('Change size exceeds 1MB limit');
+    }
+    
+    // Log validation results
+    if (issues.length > 0) {
+      console.warn(`⚠️  Devin change validation issues: ${issues.join(', ')}`);
+    } else {
+      console.log(`✅ Devin change validated successfully`);
+    }
+    
+    return issues.length === 0;
   }
 
   /**

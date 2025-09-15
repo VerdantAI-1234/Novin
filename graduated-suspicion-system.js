@@ -864,6 +864,8 @@ class ConfidenceManager {
   _calculateModelConfidence(baseSuspicion) {
     // Base confidence on factor agreement and strength
     const factors = Object.values(baseSuspicion.factors);
+    if (factors.length === 0) return 0.5; // Neutral confidence for empty factors
+    
     const avgFactorConfidence = factors.reduce((sum, factor) => sum + factor.confidence, 0) / factors.length;
     
     // Bonus for factor agreement (similar scores)

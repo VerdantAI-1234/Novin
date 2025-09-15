@@ -446,7 +446,6 @@ class AdaptiveLearningSystem {
     }
   }
 }
-}
 
 /**
  * Norm Updater
