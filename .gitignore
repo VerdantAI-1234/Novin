@@ -65,3 +65,9 @@ test-integration-saves/
 manual-test.js
 integration-test.js
 config-demo.js
+
+# Scenario test artifacts
+evaluation_results.json
+autosave_test_results.json
+./test-autosave/
+./saves/
