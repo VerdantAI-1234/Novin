@@ -1222,7 +1222,6 @@ class GoliathCognitiveInterpreter {
         reasons.push('night_unauthorized_entry_min');
       }
     }
-    let shouldNotify = alertLevel !== 'info';
 
     // Apply user preference for known activity handling
     const handling = this.config.knownActivityHandling || 'low';
