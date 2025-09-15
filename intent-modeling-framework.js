@@ -985,7 +985,10 @@ class ContextualIntentEngine {
       historical: factors.historical.contextualRelevance
     };
     
-    return Object.values(confidenceFactors).reduce((sum, conf) => sum + conf, 0) / Object.values(confidenceFactors).length;
+    const values = Object.values(confidenceFactors);
+    if (values.length === 0) return 0.5; // Neutral confidence for empty factors
+    
+    return values.reduce((sum, conf) => sum + conf, 0) / values.length;
   }
 
   _detectContextualAnomalies(factors, contextualHistory) {

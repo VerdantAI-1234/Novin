@@ -96,6 +96,15 @@ class MockIntentModelingEngine {
     };
   }
   assessSequenceIntent(assessments) {
+    if (assessments.length === 0) {
+      return {
+        sequenceIntent: 'normal_activity',
+        confidence: 0.5, // Neutral confidence for empty sequence
+        patternStrength: 0.5,
+        sequenceFactors: []
+      };
+    }
+    
     const avgSuspicion = assessments.reduce((sum, a) => sum + a.suspicionLevel, 0) / assessments.length;
     return {
       sequenceIntent: avgSuspicion > 0.7 ? 'coordinated_threat' : 'normal_activity',

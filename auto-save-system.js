@@ -85,7 +85,11 @@ class AutoSaveSystem {
     }
     
     this.changeListeners.set(componentId, component);
-    console.log(`📝 Registered component for auto-save: ${componentId}`);
+    console.log(`📝 Registered component for auto-save: ${componentId} (total: ${this.changeListeners.size})`);
+    
+    // Log component capabilities for diagnostics
+    const hasRestore = typeof component.restoreFromSave === 'function';
+    console.log(`   Component ${componentId}: getSaveState ✓, restoreFromSave ${hasRestore ? '✓' : '✗'}`);
   }
 
   /**
