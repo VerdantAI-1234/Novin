@@ -1799,7 +1799,7 @@ class IntentLearningSystem {
   }
 }
 
-module.exports = {
+export {
   IntentModelingFramework,
   BehavioralPatternAnalyzer,
   ContextualIntentEngine,

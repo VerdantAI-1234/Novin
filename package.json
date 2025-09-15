@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "description": "Goliath Cognitive Interpreter - Edge-native AI for contextual security reasoning and embodied cognition",
   "type": "module",
-  "main": "src/mobilenovin-ai.js",
+  "main": "mobilenovin-ai.js",
   "module": "src/mobilenovin-ai.js",
   "types": "src/mobilenovin-ai.d.ts",
   "sideEffects": false,

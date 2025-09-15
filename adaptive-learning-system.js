@@ -1212,7 +1212,7 @@ class EnvironmentalNorms extends BaseNorms {
   }
 }
 
-module.exports = {
+export {
   AdaptiveLearningSystem,
   NormUpdater,
   PatternEvolver,

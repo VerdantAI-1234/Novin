@@ -2115,7 +2115,7 @@ class AwarenessMetrics {
   }
 }
 
-module.exports = {
+export {
   SpatialTemporalAwareness,
   SpatialPresenceSimulator,
   TemporalContinuityTracker,

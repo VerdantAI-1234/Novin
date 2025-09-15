@@ -12,8 +12,12 @@
  * @license Enterprise B2B
  */
 
-// Import required cognitive systems - using dynamic imports for ES6 modules
-let SymbolicReasoningEngine, IntentModelingEngine, SpatialTemporalAwareness, AdaptiveLearningSystem;
+// Import required cognitive systems
+import { SymbolicReasoningEngine } from './symbolic-reasoning-engine.js';
+import { IntentModelingFramework as IntentModelingEngine } from './intent-modeling-framework.js';
+import { SpatialTemporalAwareness } from './spatial-temporal-awareness.js';
+import { AdaptiveLearningSystem } from './adaptive-learning-system.js';
+import { ContextualMemorySystem } from './contextual-memory-system.js';
 
 // Deterministic PRNG for mobile performance repeatability
 class DeterministicPRNG {
@@ -143,11 +147,6 @@ class MockAdaptiveLearningSystem {
   }
 }
 
-// Use mocks for now to enable testing
-SymbolicReasoningEngine = MockSymbolicReasoningEngine;
-IntentModelingEngine = MockIntentModelingEngine;
-SpatialTemporalAwareness = MockSpatialTemporalAwareness;
-AdaptiveLearningSystem = MockAdaptiveLearningSystem;
 
 // Cross-platform defer function
 const defer = typeof queueMicrotask === 'function' 
@@ -635,12 +634,12 @@ class GoliathCognitiveInterpreter {
       ...config
     };
     
-    // Core cognitive systems
-    this.contextualMemory = new ContextualMemorySystem(this.config);
-    this.intentModeler = new IntentModelingEngine(this.config);
-    this.reasoningEngine = new SymbolicReasoningEngine(this.config);
-    this.spatialAwareness = new SpatialTemporalAwareness(this.config);
-    this.adaptiveLearning = new AdaptiveLearningSystem(this.config);
+    // Core cognitive systems - use mock implementations for now until APIs are aligned
+    this.contextualMemory = new MockContextualMemorySystem(this.config);
+    this.intentModeler = new MockIntentModelingEngine(this.config);
+    this.reasoningEngine = new MockSymbolicReasoningEngine(this.config);
+    this.spatialAwareness = new MockSpatialTemporalAwareness(this.config);
+    this.adaptiveLearning = new MockAdaptiveLearningSystem(this.config);
     
     // Performance tracking with EMA windowing
     this.performanceMetrics = {
@@ -707,7 +706,7 @@ class GoliathCognitiveInterpreter {
       this._validatePerceptionEvent(perceptionEvent);
       
       // Update spatial-temporal awareness
-      this.spatialAwareness.updatePresence(perceptionEvent.entityId, perceptionEvent.location);
+      this.spatialAwareness.processEvent(perceptionEvent);
       
       // Retrieve relevant contextual memory with timeout
       const contextPromise = this.contextualMemory.retrieveRelevantContext(
@@ -1222,7 +1221,6 @@ class GoliathCognitiveInterpreter {
         reasons.push('night_unauthorized_entry_min');
       }
     }
-    let shouldNotify = alertLevel !== 'info';
 
     // Apply user preference for known activity handling
     const handling = this.config.knownActivityHandling || 'low';
@@ -1344,7 +1342,7 @@ class GoliathCognitiveInterpreter {
  * Contextual Memory System
  * Maintains persistent awareness of spatial-temporal patterns with mobile-optimized memory caps
  */
-class ContextualMemorySystem {
+class MockContextualMemorySystem {
   constructor(config) {
     this.config = config;
     const memoryConfig = config.memoryConfig || {};
@@ -1696,7 +1694,7 @@ class CognitiveError extends Error {
 
 // Export for edge deployment
 // ES6 module exports only for better bundling
-export { GoliathCognitiveInterpreter, ContextualMemorySystem, CognitiveError };
+export { GoliathCognitiveInterpreter, CognitiveError };
 export default GoliathCognitiveInterpreter;
 
 // Browser global fallback

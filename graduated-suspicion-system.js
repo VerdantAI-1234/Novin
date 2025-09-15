@@ -1250,7 +1250,7 @@ class AdaptationMetrics {
   }
 }
 
-module.exports = {
+export {
   GraduatedSuspicionSystem,
   SuspicionCalculator,
   UncertaintyHandler,
