@@ -11,7 +11,7 @@
  * - Improved customer satisfaction
  */
 
-const MobileNovinAI = require('../src/mobilenovin-ai');
+import { GoliathCognitiveInterpreter as MobileNovinAI } from '../mobilenovin-ai.js';
 
 class SimpliSafeMobileNovinIntegration {
   constructor(config) {
@@ -426,8 +426,8 @@ async function main() {
   console.log('   • Contextual threat assessment');
 }
 
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(console.error);
 }
 
-module.exports = SimpliSafeMobileNovinIntegration;
+export default SimpliSafeMobileNovinIntegration;

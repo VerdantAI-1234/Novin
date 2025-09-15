@@ -11,7 +11,7 @@
  * - Reduced monitoring center dispatches
  */
 
-const MobileNovinAI = require('../src/mobilenovin-ai');
+import { GoliathCognitiveInterpreter as MobileNovinAI } from '../mobilenovin-ai.js';
 
 class ADTMobileNovinIntegration {
   constructor(config) {
@@ -339,8 +339,8 @@ async function main() {
   console.log('   • Enhanced customer experience');
 }
 
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(console.error);
 }
 
-module.exports = ADTMobileNovinIntegration;
+export default ADTMobileNovinIntegration;

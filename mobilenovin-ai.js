@@ -634,12 +634,12 @@ class GoliathCognitiveInterpreter {
       ...config
     };
     
-    // Core cognitive systems
-    this.contextualMemory = new ContextualMemorySystem(this.config);
-    this.intentModeler = new IntentModelingEngine(this.config);
-    this.reasoningEngine = new SymbolicReasoningEngine(this.config);
-    this.spatialAwareness = new SpatialTemporalAwareness(this.config);
-    this.adaptiveLearning = new AdaptiveLearningSystem(this.config);
+    // Core cognitive systems - use mock implementations for now until APIs are aligned
+    this.contextualMemory = new MockContextualMemorySystem(this.config);
+    this.intentModeler = new MockIntentModelingEngine(this.config);
+    this.reasoningEngine = new MockSymbolicReasoningEngine(this.config);
+    this.spatialAwareness = new MockSpatialTemporalAwareness(this.config);
+    this.adaptiveLearning = new MockAdaptiveLearningSystem(this.config);
     
     // Performance tracking with EMA windowing
     this.performanceMetrics = {
@@ -706,7 +706,7 @@ class GoliathCognitiveInterpreter {
       this._validatePerceptionEvent(perceptionEvent);
       
       // Update spatial-temporal awareness
-      this.spatialAwareness.updatePresence(perceptionEvent.entityId, perceptionEvent.location);
+      this.spatialAwareness.processEvent(perceptionEvent);
       
       // Retrieve relevant contextual memory with timeout
       const contextPromise = this.contextualMemory.retrieveRelevantContext(

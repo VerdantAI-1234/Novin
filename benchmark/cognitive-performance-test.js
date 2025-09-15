@@ -3,10 +3,10 @@
  * Tests latency, memory usage, and cognitive processing efficiency
  */
 
-const { GoliathCognitiveInterpreter } = require('../src/mobilenovin-ai');
-const { performance } = require('perf_hooks');
-const fs = require('fs');
-const path = require('path');
+import { GoliathCognitiveInterpreter } from '../mobilenovin-ai.js';
+import { performance } from 'perf_hooks';
+import fs from 'fs';
+import path from 'path';
 
 class CognitivePerformanceBenchmark {
   constructor() {
@@ -50,15 +50,13 @@ class CognitivePerformanceBenchmark {
       latencyTarget: 5 // 5ms
     });
     
-    await this.interpreter.initialize();
-    
     const initTime = performance.now() - startTime;
     console.log(`   Initialization time: ${initTime.toFixed(2)}ms`);
     
     // Warm up the interpreter
     console.log('   Warming up cognitive systems...');
     for (let i = 0; i < 10; i++) {
-      await this.interpreter.processEvent(this.testData.warmupEvents[i % this.testData.warmupEvents.length]);
+      await this.interpreter.interpretEvent(this.testData.warmupEvents[i % this.testData.warmupEvents.length]);
     }
     
     console.log('   ✅ Interpreter ready for benchmarking');
@@ -75,7 +73,7 @@ class CognitivePerformanceBenchmark {
       const event = this.testData.events[i % this.testData.events.length];
       
       const startTime = performance.now();
-      await this.interpreter.processEvent(event);
+      await this.interpreter.interpretEvent(event);
       const endTime = performance.now();
       
       const latency = endTime - startTime;
@@ -111,7 +109,7 @@ class CognitivePerformanceBenchmark {
     
     for (let i = 0; i < iterations; i++) {
       const event = this.testData.complexEvents[i % this.testData.complexEvents.length];
-      await this.interpreter.processEvent(event);
+      await this.interpreter.interpretEvent(event);
       
       if (i % 50 === 0) {
         const memory = process.memoryUsage();
@@ -161,7 +159,7 @@ class CognitivePerformanceBenchmark {
       const event = this.testData.cognitiveEvents[i % this.testData.cognitiveEvents.length];
       
       const startTime = performance.now();
-      const result = await this.interpreter.processEvent(event);
+      const result = await this.interpreter.interpretEvent(event);
       const totalTime = performance.now() - startTime;
       
       // Extract cognitive processing times
@@ -202,7 +200,7 @@ class CognitivePerformanceBenchmark {
     
     while (performance.now() - startTime < duration) {
       const event = this.testData.events[eventsProcessed % this.testData.events.length];
-      await this.interpreter.processEvent(event);
+      await this.interpreter.interpretEvent(event);
       eventsProcessed++;
       
       if (eventsProcessed % 100 === 0) {
@@ -228,57 +226,57 @@ class CognitivePerformanceBenchmark {
 
   _generateTestData() {
     const baseEvent = {
-      timestamp: Date.now(),
+      entityType: 'adult_male',
+      entityId: 'test_entity',
       location: 'test_zone',
-      type: 'motion_detected'
+      timestamp: Date.now(),
+      behaviors: ['walking'],
+      spatialData: { x: 0, y: 0 },
+      detectionConfidence: 0.8
     };
 
     return {
       warmupEvents: Array(10).fill(0).map((_, i) => ({
         ...baseEvent,
-        id: `warmup_${i}`,
+        entityId: `warmup_${i}`,
         timestamp: Date.now() + i * 1000
       })),
       
       events: Array(100).fill(0).map((_, i) => ({
         ...baseEvent,
-        id: `event_${i}`,
+        entityId: `event_${i}`,
         timestamp: Date.now() + i * 1000,
-        confidence: 0.5 + (i % 5) * 0.1,
-        metadata: {
-          sensor: `sensor_${i % 10}`,
-          zone: `zone_${i % 5}`
-        }
+        detectionConfidence: 0.5 + (i % 5) * 0.1,
+        behaviors: ['walking', 'observing'],
+        spatialData: { x: i % 10, y: i % 5 }
       })),
       
       complexEvents: Array(50).fill(0).map((_, i) => ({
         ...baseEvent,
-        id: `complex_${i}`,
+        entityId: `complex_${i}`,
+        entityType: 'vehicle',
         timestamp: Date.now() + i * 2000,
-        type: 'complex_behavior',
-        context: {
-          previousEvents: Array(5).fill(0).map((_, j) => `prev_${i}_${j}`),
-          spatialContext: {
-            location: `zone_${i % 3}`,
-            adjacentZones: [`zone_${(i + 1) % 3}`, `zone_${(i + 2) % 3}`]
-          },
-          temporalContext: {
-            timeOfDay: (i % 24),
-            dayOfWeek: (i % 7)
-          }
-        }
+        behaviors: ['avoiding_cameras', 'carrying_bag', 'loitering'],
+        spatialData: { 
+          x: i % 10, 
+          y: i % 5,
+          movement: { dx: 1, dy: 0 }
+        },
+        detectionConfidence: 0.7 + (i % 3) * 0.1
       })),
       
       cognitiveEvents: Array(30).fill(0).map((_, i) => ({
         ...baseEvent,
-        id: `cognitive_${i}`,
+        entityId: `cognitive_${i}`,
+        entityType: 'adult_female',
         timestamp: Date.now() + i * 3000,
-        type: 'cognitive_analysis',
-        requiresReasoning: true,
-        requiresMemory: true,
-        requiresIntent: true,
-        requiresExplanation: true,
-        complexity: 0.7 + (i % 3) * 0.1
+        behaviors: ['suspicious_behavior', 'avoiding_cameras', 'testing_doors'],
+        spatialData: { 
+          x: i % 5, 
+          y: i % 3,
+          movement: { dx: -1, dy: 1 }
+        },
+        detectionConfidence: 0.9
       }))
     };
   }
@@ -330,7 +328,7 @@ class CognitivePerformanceBenchmark {
     console.log(`   Throughput: ${this.results.throughput.throughput.toFixed(1)} events/sec`);
     
     // Save detailed report
-    const reportPath = path.join(__dirname, 'performance-report.json');
+    const reportPath = path.join(path.dirname(new URL(import.meta.url).pathname), 'performance-report.json');
     fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
     console.log(`\n💾 Detailed report saved to: ${reportPath}`);
   }
@@ -371,7 +369,7 @@ class MemoryProfiler {
 }
 
 // Run benchmark if called directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   const benchmark = new CognitivePerformanceBenchmark();
   
   benchmark.runFullBenchmark().catch(error => {
@@ -380,7 +378,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = {
+export {
   CognitivePerformanceBenchmark,
   MemoryProfiler
 };

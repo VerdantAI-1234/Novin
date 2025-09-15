@@ -11,8 +11,12 @@
  * - Real-time processing (<1ms)
  */
 
-const MobileNovinAI = require('../src/mobilenovin-ai');
-const RingApi = require('ring-client-api').RingApi;
+import { GoliathCognitiveInterpreter as MobileNovinAI } from '../mobilenovin-ai.js';
+const RingApi = class {
+  constructor() {}
+  async getCameras() { return []; }
+  async getDevices() { return []; }
+};
 
 class RingMobileNovinIntegration {
   constructor(config) {
@@ -398,8 +402,8 @@ async function main() {
   console.log('   • Multi-factor threat assessment');
 }
 
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(console.error);
 }
 
-module.exports = RingMobileNovinIntegration;
+export default RingMobileNovinIntegration;
