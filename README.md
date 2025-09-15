@@ -76,6 +76,12 @@ console.log(decision);
 - **Confidence Weighting**: Low-confidence events appropriately downgraded
 - **Context-Aware Decisions**: Same event scored differently based on context
 
+### 💾 Auto-Save & State Persistence
+- **Automatic State Saving**: AI learning and memory automatically saved every 30 seconds
+- **Devin Change Tracking**: Tracks and exports AI-generated modifications for analysis
+- **Crash Recovery**: Restore AI state and continue learning after system restarts
+- **Export Capabilities**: Generate reports of AI decision history and adaptations
+
 ## Integration Examples
 
 ### Ring Integration

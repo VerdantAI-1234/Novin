@@ -1,0 +1,36 @@
+{
+  "exportTime": 1757950586114,
+  "totalChanges": 2,
+  "changes": [
+    {
+      "componentId": "main-ai-system",
+      "timestamp": 1757950585729,
+      "details": {
+        "type": "event_interpreted",
+        "eventId": "evt-1757950585727-person-001-ow8geg",
+        "suspicionLevel": 0.3018761398270726,
+        "entityType": "adult_male",
+        "processingTime": 0.81,
+        "isAiGenerated": true,
+        "source": "ai",
+        "timestamp": 1757950585729
+      },
+      "saved": true
+    },
+    {
+      "componentId": "main-ai-system",
+      "timestamp": 1757950585730,
+      "details": {
+        "type": "event_interpreted",
+        "eventId": "evt-1757950586727-car-001-2h07t4",
+        "suspicionLevel": 0.170500036329031,
+        "entityType": "vehicle",
+        "processingTime": 0.3,
+        "isAiGenerated": true,
+        "source": "ai",
+        "timestamp": 1757950585730
+      },
+      "saved": true
+    }
+  ]
+}
