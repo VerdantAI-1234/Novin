@@ -147,11 +147,6 @@ class MockAdaptiveLearningSystem {
   }
 }
 
-// Use mocks for now to enable testing
-SymbolicReasoningEngine = MockSymbolicReasoningEngine;
-IntentModelingEngine = MockIntentModelingEngine;
-SpatialTemporalAwareness = MockSpatialTemporalAwareness;
-AdaptiveLearningSystem = MockAdaptiveLearningSystem;
 
 // Cross-platform defer function
 const defer = typeof queueMicrotask === 'function' 
@@ -1347,7 +1342,7 @@ class GoliathCognitiveInterpreter {
  * Contextual Memory System
  * Maintains persistent awareness of spatial-temporal patterns with mobile-optimized memory caps
  */
-class ContextualMemorySystem {
+class MockContextualMemorySystem {
   constructor(config) {
     this.config = config;
     const memoryConfig = config.memoryConfig || {};
@@ -1699,7 +1694,7 @@ class CognitiveError extends Error {
 
 // Export for edge deployment
 // ES6 module exports only for better bundling
-export { GoliathCognitiveInterpreter, ContextualMemorySystem, CognitiveError };
+export { GoliathCognitiveInterpreter, CognitiveError };
 export default GoliathCognitiveInterpreter;
 
 // Browser global fallback
