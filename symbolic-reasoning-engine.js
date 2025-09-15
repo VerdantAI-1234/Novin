@@ -607,7 +607,64 @@ class SymbolicKnowledgeBase {
   }
 
   _matchesConditions(ruleCondition, actualConditions) {
-    // Simple condition matching - would be more sophisticated in practice
+    // ruleCondition should be an array of predicate objects
+    if (!Array.isArray(ruleCondition)) {
+      return false;
+    }
+    
+    // For the rule to match, all predicates must be true (logical AND)
+    for (const predicate of ruleCondition) {
+      // Each predicate should have: { factor: string, operator: string, value: any }
+      if (!predicate || typeof predicate !== 'object') {
+        return false;
+      }
+      
+      const { factor, operator, value } = predicate;
+      
+      // Check if the factor exists in actualConditions
+      if (!(factor in actualConditions)) {
+        return false;
+      }
+      
+      const actualValue = actualConditions[factor];
+      
+      // Evaluate based on operator
+      switch (operator) {
+        case 'equals':
+          if (actualValue !== value) {
+            return false;
+          }
+          break;
+          
+        case 'greaterThan':
+          if (actualValue <= value) {
+            return false;
+          }
+          break;
+          
+        case 'lessThan':
+          if (actualValue >= value) {
+            return false;
+          }
+          break;
+          
+        case 'contains':
+          // For when the actual condition is an array or string
+          if (!actualValue || typeof actualValue.includes !== 'function') {
+            return false;
+          }
+          if (!actualValue.includes(value)) {
+            return false;
+          }
+          break;
+          
+        default:
+          // Unsupported operator - return false
+          return false;
+      }
+    }
+    
+    // All predicates evaluated to true
     return true;
   }
 }
