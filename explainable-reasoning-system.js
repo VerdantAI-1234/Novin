@@ -1068,10 +1068,19 @@ class ConfidenceExplainer {
   }
 
   _assessAssumptionValidity(assumptions) {
-    if (assumptions.length === 0) return 0.7; // Default if no assumptions
+    if (!assumptions || assumptions.length === 0) {
+      console.warn('assessAssumptionValidity: No assumptions provided, using default validity 0.7');
+      return 0.7; // Default if no assumptions
+    }
     
-    const avgConfidence = assumptions.reduce((sum, assumption) => sum + assumption.confidence, 0) / assumptions.length;
-    return avgConfidence;
+    const validConfidences = assumptions.filter(a => a && typeof a.confidence === 'number' && !isNaN(a.confidence));
+    if (validConfidences.length === 0) {
+      console.warn('assessAssumptionValidity: No valid confidence values, using default validity 0.5');
+      return 0.5;
+    }
+    
+    const avgConfidence = validConfidences.reduce((sum, assumption) => sum + assumption.confidence, 0) / validConfidences.length;
+    return Math.max(0, Math.min(1, avgConfidence)); // Clamp to [0,1]
   }
 
   _categorizeReliability(reliability) {

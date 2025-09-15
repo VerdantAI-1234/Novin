@@ -18,6 +18,8 @@ import { IntentModelingFramework as IntentModelingEngine } from './intent-modeli
 import { SpatialTemporalAwareness } from './spatial-temporal-awareness.js';
 import { AdaptiveLearningSystem } from './adaptive-learning-system.js';
 import { ContextualMemorySystem } from './contextual-memory-system.js';
+import { DEFAULT_CONFIG, validateConfig, mergeConfig } from './config-schema.js';
+import { AutoSaveSystem } from './autosave-system.js';
 
 // Deterministic PRNG for mobile performance repeatability
 class DeterministicPRNG {
@@ -602,45 +604,49 @@ class P2QuantileEstimator {
 
 class GoliathCognitiveInterpreter {
   constructor(config = {}) {
+    this.config = mergeConfig(DEFAULT_CONFIG, config);
+    
+    // Validate configuration
+    const configErrors = validateConfig(this.config);
+    if (configErrors.length > 0) {
+      throw new Error(`Configuration validation failed: ${configErrors.join(', ')}`);
+    }
+    
     this.config = {
+      ...this.config,
       // Edge-native configuration - no cloud dependencies
       edgeMode: true,
-      performanceOptimized: false,
-      maxMemoryEvents: config.maxMemoryEvents || 10000,
+      performanceOptimized: config.performanceOptimized || false,
+      maxMemoryEvents: config.maxMemoryEvents || this.config.performance.maxMemoryEvents,
       memoryRetentionHours: config.memoryRetentionHours || 168, // 7 days
-      memoryLimit: 128 * 1024 * 1024, // 128MB
-      processingTimeout: config.latencyTarget ? config.latencyTarget : 5, // 5ms for edge
-      uncertaintyThreshold: config.uncertaintyThreshold || 0.3,
-      confidenceThreshold: 0.7,
-      explainabilityLevel: config.performanceOptimized ? 'minimal' : 'detailed',
+      memoryLimit: config.memoryLimit || this.config.performance.memoryLimit,
+      processingTimeout: config.latencyTarget || config.processingTimeout || this.config.performance.processingTimeout,
+      explainabilityLevel: config.performanceOptimized ? 'minimal' : (config.explainabilityLevel || 'detailed'),
       spatialRadius: config.spatialRadius || 50, // meters
       temporalWindow: config.temporalWindow || 3600000, // 1 hour in ms
-      adaptiveLearning: true,
-      spatialAwareness: true,
-      temporalContinuity: true,
-      embodiedCognition: true,
-      batchProcessing: config.performanceOptimized || false,
-      cacheSize: config.performanceOptimized ? 1000 : 5000,
+      adaptiveLearning: config.adaptiveLearning !== false,
+      spatialAwareness: config.spatialAwareness !== false,
+      temporalContinuity: config.temporalContinuity !== false,
+      embodiedCognition: config.embodiedCognition !== false,
+      batchProcessing: config.performanceOptimized || config.batchProcessing || false,
+      cacheSize: config.performanceOptimized ? 1000 : (config.cacheSize || this.config.performance.cacheSize),
       knownActivityHandling: config.knownActivityHandling || 'low',
       alertBackoffMs: config.alertBackoffMs || 60000,
-      suspicionThresholds: { info: 0.15, standard: 0.3, elevated: 0.55, critical: 0.8, ...(config.suspicionThresholds || {}) },
       highRiskNightEntryBoost: config.highRiskNightEntryBoost ?? 0.25,
       enforceNightEntryMin: config.enforceNightEntryMin || 'standard',
       
       // Mobile feature flags
-      enableSequenceAnalysis: config.enableSequenceAnalysis !== undefined ? config.enableSequenceAnalysis : true,
-      enableDeepInsights: config.enableDeepInsights !== undefined ? config.enableDeepInsights : true,
-      enableNormalPatterns: config.enableNormalPatterns !== undefined ? config.enableNormalPatterns : true,
-      enableMetricsCollection: config.enableMetricsCollection !== undefined ? config.enableMetricsCollection : true,
-      enableAdaptiveLearning: config.enableAdaptiveLearning !== undefined ? config.enableAdaptiveLearning : true,
+      enableSequenceAnalysis: config.enableSequenceAnalysis !== false,
+      enableDeepInsights: config.enableDeepInsights !== false,
+      enableNormalPatterns: config.enableNormalPatterns !== false,
+      enableMetricsCollection: config.enableMetricsCollection !== false,
+      enableAdaptiveLearning: config.enableAdaptiveLearning !== false,
       
       // Mobile optimizations
       asyncScheduling: config.asyncScheduling || false,
       objectPooling: config.objectPooling || false,
       metricsMode: config.metricsMode || 'full', // 'full', 'ema_only', 'p2_estimator'
-      platform: config.platform || 'node', // 'node', 'react-native', 'browser'
-      
-      ...config
+      platform: config.platform || 'node' // 'node', 'react-native', 'browser'
     };
     
     // Core cognitive systems - use mock implementations for now until APIs are aligned
@@ -649,6 +655,14 @@ class GoliathCognitiveInterpreter {
     this.reasoningEngine = new MockSymbolicReasoningEngine(this.config);
     this.spatialAwareness = new MockSpatialTemporalAwareness(this.config);
     this.adaptiveLearning = new MockAdaptiveLearningSystem(this.config);
+    
+    // Initialize autosave system
+    this.autoSaveSystem = new AutoSaveSystem(this.config);
+    if (this.config.autosave.enabled) {
+      this.autoSaveSystem.initialize().catch(error => {
+        console.warn('AutoSave initialization failed:', error);
+      });
+    }
     
     // Performance tracking with EMA windowing
     this.performanceMetrics = {
@@ -828,8 +842,22 @@ class GoliathCognitiveInterpreter {
    * Maintains contextual relationships between events
    */
   async interpretEventSequence(perceptionEvents) {
-    if (!Array.isArray(perceptionEvents) || perceptionEvents.length === 0) {
-      throw new CognitiveError('Event sequence must be a non-empty array');
+    if (!Array.isArray(perceptionEvents)) {
+      throw new CognitiveError('Event sequence must be an array');
+    }
+    
+    if (perceptionEvents.length === 0) {
+      console.warn('interpretEventSequence: Empty event sequence provided, returning neutral assessment');
+      return {
+        individualAssessments: [],
+        sequenceAssessment: {
+          overallTrend: 'neutral',
+          escalationPattern: false,
+          temporalConsistency: this.config.fallbackValues.confidence,
+          confidence: this.config.fallbackValues.confidence
+        },
+        totalEvents: 0
+      };
     }
     
     // Sort by timestamp to maintain temporal order
@@ -1410,7 +1438,7 @@ class GoliathCognitiveInterpreter {
 
     // Confidence gating (lightweight)
     const cognitiveConfidence = this._calculateCognitiveConfidence(assessment);
-    if (cognitiveConfidence < (this.config.confidenceThreshold || 0.7) && alertLevel !== 'critical') {
+    if (cognitiveConfidence < this.config.confidenceThreshold && alertLevel !== 'critical') {
       if (alertLevel === 'elevated') { alertLevel = 'standard'; reasons.push('low_confidence_downgrade'); }
       else if (alertLevel === 'standard') { alertLevel = 'info'; shouldNotify = false; reasons.push('low_confidence_suppress'); }
     }
