@@ -1278,7 +1278,7 @@ class ExplanationMetrics {
   }
 }
 
-module.exports = {
+export {
   ExplainableReasoningSystem,
   DecisionTracer,
   ReasoningChainBuilder,

@@ -12,8 +12,12 @@
  * @license Enterprise B2B
  */
 
-// Import required cognitive systems - using dynamic imports for ES6 modules
-let SymbolicReasoningEngine, IntentModelingEngine, SpatialTemporalAwareness, AdaptiveLearningSystem;
+// Import required cognitive systems
+import { SymbolicReasoningEngine } from './symbolic-reasoning-engine.js';
+import { IntentModelingFramework as IntentModelingEngine } from './intent-modeling-framework.js';
+import { SpatialTemporalAwareness } from './spatial-temporal-awareness.js';
+import { AdaptiveLearningSystem } from './adaptive-learning-system.js';
+import { ContextualMemorySystem } from './contextual-memory-system.js';
 
 // Deterministic PRNG for mobile performance repeatability
 class DeterministicPRNG {
