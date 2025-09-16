@@ -607,8 +607,99 @@ class SymbolicKnowledgeBase {
   }
 
   _matchesConditions(ruleCondition, actualConditions) {
-    // Simple condition matching - would be more sophisticated in practice
-    return true;
+    // Handle null or undefined conditions
+    if (!ruleCondition) {
+      return false;
+    }
+    
+    // Handle simple boolean conditions
+    if (typeof ruleCondition === 'boolean') {
+      return ruleCondition;
+    }
+    
+    // Handle array of conditions (AND logic - all must be true)
+    if (Array.isArray(ruleCondition)) {
+      // Short-circuit evaluation: return false on first false condition
+      for (const condition of ruleCondition) {
+        if (!this._evaluatePredicate(condition, actualConditions)) {
+          return false;
+        }
+      }
+      return true;
+    }
+    
+    // Handle single condition object
+    if (typeof ruleCondition === 'object') {
+      return this._evaluatePredicate(ruleCondition, actualConditions);
+    }
+    
+    // Default to false for unsupported condition types
+    return false;
+  }
+  
+  _evaluatePredicate(predicate, actualConditions) {
+    // Handle null or undefined predicates
+    if (!predicate || !actualConditions) {
+      return false;
+    }
+    
+    const { field, operator, value } = predicate;
+    
+    // Ensure required fields are present
+    if (!field || !operator || value === undefined) {
+      return false;
+    }
+    
+    // Get the actual value from conditions
+    const actualValue = this._getFieldValue(field, actualConditions);
+    
+    // Handle cases where field doesn't exist in actual conditions
+    if (actualValue === undefined) {
+      return false;
+    }
+    
+    // Evaluate based on operator
+    switch (operator) {
+      case 'equals':
+        return actualValue === value;
+        
+      case 'greaterThan':
+        return actualValue > value;
+        
+      case 'lessThan':
+        return actualValue < value;
+        
+      case 'contains':
+        // Handle string contains
+        if (typeof actualValue === 'string' && typeof value === 'string') {
+          return actualValue.includes(value);
+        }
+        // Handle array contains
+        if (Array.isArray(actualValue)) {
+          return actualValue.includes(value);
+        }
+        return false;
+        
+      default:
+        // Default to false for unsupported operators
+        return false;
+    }
+  }
+  
+  _getFieldValue(field, conditions) {
+    // Support dot notation for nested fields (e.g., "entity.type")
+    const fieldParts = field.split('.');
+    let currentValue = conditions;
+    
+    for (const part of fieldParts) {
+      if (currentValue && typeof currentValue === 'object' && part in currentValue) {
+        currentValue = currentValue[part];
+      } else {
+        return undefined;
+      }
+    }
+    
+    return currentValue;
   }
 }
 
